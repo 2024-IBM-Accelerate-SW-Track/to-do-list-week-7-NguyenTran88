@@ -6,10 +6,12 @@ const bodyParser = require('body-parser');
 const fsPromises = require("fs").promises;
 //const fs = require("fs");
 const todoDBName = "tododb";
-const useCloudant = true;
+const useCloudant = false;
 const basicAuth = require("express-basic-auth");
 var { authenticator, upsertUser, cookieAuth } = require("./authentication");
 const cookieParser = require("cookie-parser");
+
+
 
 const auth = basicAuth({
   authorizer: authenticator
@@ -30,7 +32,6 @@ if (useCloudant) {
   initDB();
 }
 
-
 app.use(bodyParser.json({ extended: true }));
 
 app.listen(port, () => console.log("Backend server live on " + port));
@@ -43,7 +44,6 @@ app.get("/", (request, response) => {
 
 //add new item to json file
 app.post("/add/item", cookieAuth, addItem)
-
 async function addItem(request, response) {
   try {
     // Converting Javascript object (Task Item) to a JSON string
@@ -149,24 +149,6 @@ async function searchItems(request, response) {
   }
 };
 
-app.get("/authenticate", auth, (req, res) => {
-  console.log(`user logging in: ${req.auth.user}`);
-  res.cookie('user', req.auth.user, { signed: true });
-  res.sendStatus(200);
-});
-
-app.post("/users", (req, res) => {
-  const b64auth = (req.headers.authorization || '').split(' ')[1] || ''
-  const [username, password] = Buffer.from(b64auth, 'base64').toString().split(':')
-  const upsertSucceeded = upsertUser(username, password)
-  res.sendStatus(upsertSucceeded ? 200 : 401);
-});
-
-app.get("/logout", (req, res) => {
-  res.clearCookie('user');
-  res.end();
-});
-
 
 // Add initDB function here
 async function initDB() {
@@ -191,3 +173,21 @@ async function initDB() {
 
   }
 };
+
+app.get("/authenticate", auth, (req, res) => {
+  console.log(`user logging in: ${req.auth.user}`);
+  res.cookie('user', req.auth.user, { signed: true });
+  res.sendStatus(200);
+});
+
+app.post("/users", (req, res) => {
+  const b64auth = (req.headers.authorization || '').split(' ')[1] || ''
+  const [username, password] = Buffer.from(b64auth, 'base64').toString().split(':')
+  const upsertSucceeded = upsertUser(username, password)
+  res.sendStatus(upsertSucceeded ? 200 : 401);
+});
+
+app.get("/logout", (req, res) => {
+  res.clearCookie('user');
+  res.end();
+});
